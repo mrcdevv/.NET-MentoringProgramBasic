@@ -1,0 +1,8 @@
+{
+    "ISBN": "978-3-16-148410-0",
+    "Title": "The Great Book",
+    "Authors": ["Alice Johnson"],
+    "NumberOfPages": 320,
+    "Publisher": "Fictional Press",
+    "DatePublished": "2015-05-15"
+}
