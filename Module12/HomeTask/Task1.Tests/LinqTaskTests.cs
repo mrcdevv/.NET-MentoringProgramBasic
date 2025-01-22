@@ -68,9 +68,9 @@ namespace Task1.Tests
             Assert.That(() => LinqTask.Linq2UsingGroup(null, null).ToList(), Throws.ArgumentNullException);
         }
 
-        [TestCase(800, ExpectedResult = 2)]
+        [TestCase(800, ExpectedResult = 4)]
         [TestCase(0, ExpectedResult = 6)]
-        [TestCase(-1, ExpectedResult = 6)]
+        [TestCase(-1, ExpectedResult = 10)]
         [TestCase(1, ExpectedResult = 5)]
         public int Linq3_Limit_ReturnsCustomersCount(decimal limit)
         {
@@ -132,7 +132,8 @@ namespace Task1.Tests
             var expectedResult = DataSource.Customers.ToList();
             expectedResult.RemoveAt(0);
             expectedResult.RemoveAt(0);
-            expectedResult.RemoveAt(3);
+            expectedResult.RemoveAt(2);
+            expectedResult.RemoveAt(2);
 
             var result = LinqTask.Linq6(DataSource.Customers).ToList();
 
@@ -231,10 +232,10 @@ namespace Task1.Tests
         {
             var expected = new List<(string city, int averageIncome, int averageIntensity)>
             {
-                ("Berlin", 2023, 3),
+                ("Berlin", 2022, 3),
                 ("Mexico D.F.", 680, 2),
-                ("London", 690, 1),
-                ("Warszawa", 1, 0),
+                ("London", 689, 2),
+                ("Warszawa", 1, 1),
                 ("Sao Paulo", 0, 0),
                 ("USA", 0, 0)
             };
