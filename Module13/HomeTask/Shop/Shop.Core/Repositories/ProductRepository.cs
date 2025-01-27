@@ -11,11 +11,11 @@ namespace Shop.Core.Repositories
 {
     public interface IProductRepository
     {
-        Task<Product> GetByIdAsync(int id);
-        Task<IEnumerable<Product>> GetAllAsync();
-        Task AddAsync(Product product);
-        Task UpdateAsync(Product product);
-        Task DeleteAsync(int id);
+        Task<Product> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task AddAsync(Product product, CancellationToken cancellationToken = default);
+        Task UpdateAsync(Product product, CancellationToken cancellationToken = default);
+        Task DeleteAsync(int id, CancellationToken cancellationToken = default);
     }
 
     public class ProductRepository : IProductRepository
@@ -27,16 +27,18 @@ namespace Shop.Core.Repositories
             _dbHelper = dbHelper;
         }
 
-        public async Task<Product> GetByIdAsync(int id)
+        public async Task<Product> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             using (var connection = await _dbHelper.GetConnectionAsync())
             {
-                var command = new SqlCommand("SELECT * FROM Product WHERE Id = @Id", connection);
+                var command = new SqlCommand(
+                    "SELECT Id, Name, Description, Weight, Height, Width, Length FROM Product WHERE Id = @Id",
+                    connection);
                 command.Parameters.AddWithValue("@Id", id);
 
-                using (var reader = await command.ExecuteReaderAsync())
+                using (var reader = await command.ExecuteReaderAsync(cancellationToken))
                 {
-                    if (await reader.ReadAsync())
+                    if (await reader.ReadAsync(cancellationToken))
                     {
                         return new Product
                         {
@@ -54,16 +56,18 @@ namespace Shop.Core.Repositories
             return null;
         }
 
-        public async Task<IEnumerable<Product>> GetAllAsync()
+        public async Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var products = new List<Product>();
             using (var connection = await _dbHelper.GetConnectionAsync())
             {
-                var command = new SqlCommand("SELECT * FROM Product", connection);
+                var command = new SqlCommand(
+                    "SELECT Id, Name, Description, Weight, Height, Width, Length FROM Product",
+                    connection);
 
-                using (var reader = await command.ExecuteReaderAsync())
+                using (var reader = await command.ExecuteReaderAsync(cancellationToken))
                 {
-                    while (await reader.ReadAsync())
+                    while (await reader.ReadAsync(cancellationToken))
                     {
                         products.Add(new Product
                         {
@@ -81,13 +85,15 @@ namespace Shop.Core.Repositories
             return products;
         }
 
-        public async Task AddAsync(Product product)
+        public async Task AddAsync(Product product, CancellationToken cancellationToken = default)
         {
             using (var connection = await _dbHelper.GetConnectionAsync())
             {
                 var command = new SqlCommand(
-                    "INSERT INTO Product (Id, Name, Description, Weight, Height, Width, Length) " +
-                    "VALUES (@Id, @Name, @Description, @Weight, @Height, @Width, @Length)", connection);
+                    """
+                    INSERT INTO Product (Id, Name, Description, Weight, Height, Width, Length) 
+                    VALUES (@Id, @Name, @Description, @Weight, @Height, @Width, @Length)
+                    """, connection);
                 command.Parameters.AddWithValue("@Id", product.Id);
                 command.Parameters.AddWithValue("@Name", product.Name);
                 command.Parameters.AddWithValue("@Description", product.Description);
@@ -96,17 +102,19 @@ namespace Shop.Core.Repositories
                 command.Parameters.AddWithValue("@Width", product.Width);
                 command.Parameters.AddWithValue("@Length", product.Length);
 
-                await command.ExecuteNonQueryAsync();
+                await command.ExecuteNonQueryAsync(cancellationToken);
             }
         }
 
-        public async Task UpdateAsync(Product product)
+        public async Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
         {
             using (var connection = await _dbHelper.GetConnectionAsync())
             {
                 var command = new SqlCommand(
-                    "UPDATE Product SET Name = @Name, Description = @Description, Weight = @Weight, " +
-                    "Height = @Height, Width = @Width, Length = @Length WHERE Id = @Id", connection);
+                    """
+                    UPDATE Product SET Name = @Name, Description = @Description, Weight = @Weight, 
+                    Height = @Height, Width = @Width, Length = @Length WHERE Id = @Id
+                    """, connection);
                 command.Parameters.AddWithValue("@Id", product.Id);
                 command.Parameters.AddWithValue("@Name", product.Name);
                 command.Parameters.AddWithValue("@Description", product.Description);
@@ -115,21 +123,25 @@ namespace Shop.Core.Repositories
                 command.Parameters.AddWithValue("@Width", product.Width);
                 command.Parameters.AddWithValue("@Length", product.Length);
 
-                await command.ExecuteNonQueryAsync();
+                await command.ExecuteNonQueryAsync(cancellationToken);
             }
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
             using (var connection = await _dbHelper.GetConnectionAsync())
             {
-                var deleteOrderProductCommand = new SqlCommand("DELETE FROM OrderProduct WHERE ProductId = @ProductId", connection);
+                var deleteOrderProductCommand = new SqlCommand(
+                    "DELETE FROM OrderProduct WHERE ProductId = @ProductId",
+                    connection);
                 deleteOrderProductCommand.Parameters.AddWithValue("@ProductId", id);
-                await deleteOrderProductCommand.ExecuteNonQueryAsync();
+                await deleteOrderProductCommand.ExecuteNonQueryAsync(cancellationToken);
 
-                var deleteProductCommand = new SqlCommand("DELETE FROM Product WHERE Id = @Id", connection);
+                var deleteProductCommand = new SqlCommand(
+                    "DELETE FROM Product WHERE Id = @Id",
+                    connection);
                 deleteProductCommand.Parameters.AddWithValue("@Id", id);
-                await deleteProductCommand.ExecuteNonQueryAsync();
+                await deleteProductCommand.ExecuteNonQueryAsync(cancellationToken);
             }
         }
     }

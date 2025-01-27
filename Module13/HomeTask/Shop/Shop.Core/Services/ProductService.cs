@@ -10,11 +10,11 @@ namespace Shop.Core.Services
 {
     public interface IProductService
     {
-        Task<Product> GetByIdAsync(int id);
-        Task<IEnumerable<Product>> GetAllAsync();
-        Task AddAsync(Product product);
-        Task UpdateAsync(Product product);
-        Task DeleteAsync(int id);
+        Task<Product> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task AddAsync(Product product, CancellationToken cancellationToken = default);
+        Task UpdateAsync(Product product, CancellationToken cancellationToken = default);
+        Task DeleteAsync(int id, CancellationToken cancellationToken = default);
     }
 
     public class ProductService : IProductService
@@ -26,29 +26,29 @@ namespace Shop.Core.Services
             _productRepository = productRepository;
         }
 
-        public async Task<Product> GetByIdAsync(int id)
+        public async Task<Product> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            return await _productRepository.GetByIdAsync(id);
+            return await _productRepository.GetByIdAsync(id, cancellationToken);
         }
 
-        public async Task<IEnumerable<Product>> GetAllAsync()
+        public async Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            return await _productRepository.GetAllAsync();
+            return await _productRepository.GetAllAsync(cancellationToken);
         }
 
-        public async Task AddAsync(Product product)
+        public async Task AddAsync(Product product, CancellationToken cancellationToken = default)
         {
-            await _productRepository.AddAsync(product);
+            await _productRepository.AddAsync(product, cancellationToken);
         }
 
-        public async Task UpdateAsync(Product product)
+        public async Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
         {
-            await _productRepository.UpdateAsync(product);
+            await _productRepository.UpdateAsync(product, cancellationToken);
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            await _productRepository.DeleteAsync(id);
+            await _productRepository.DeleteAsync(id, cancellationToken);
         }
     }
 }

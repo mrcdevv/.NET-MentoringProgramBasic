@@ -18,14 +18,16 @@ namespace Shop.Core.Repositories
             _connectionString = connectionString;
         }
 
-        public async Task<Product> GetByIdAsync(int id)
+        public async Task<Product> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             var dataSet = new DataSet();
             using (var connection = new SqlConnection(_connectionString))
             {
-                var adapter = new SqlDataAdapter("SELECT * FROM Product WHERE Id = @Id", connection);
+                var query = "SELECT Id, Name, Description, Weight, Height, Width, Length FROM Product WHERE Id = @Id";
+                var adapter = new SqlDataAdapter(query, connection);
                 adapter.SelectCommand.Parameters.AddWithValue("@Id", id);
-                await Task.Run(() => adapter.Fill(dataSet, "Product"));
+
+                await Task.Run(() => adapter.Fill(dataSet, "Product"), cancellationToken);
             }
 
             if (dataSet.Tables["Product"].Rows.Count > 0)
@@ -45,14 +47,16 @@ namespace Shop.Core.Repositories
             return null;
         }
 
-        public async Task<IEnumerable<Product>> GetAllAsync()
+        public async Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var products = new List<Product>();
             var dataSet = new DataSet();
             using (var connection = new SqlConnection(_connectionString))
             {
-                var adapter = new SqlDataAdapter("SELECT * FROM Product", connection);
-                await Task.Run(() => adapter.Fill(dataSet, "Product"));
+                var query = "SELECT Id, Name, Description, Weight, Height, Width, Length FROM Product";
+                var adapter = new SqlDataAdapter(query, connection);
+
+                await Task.Run(() => adapter.Fill(dataSet, "Product"), cancellationToken);
             }
 
             foreach (DataRow row in dataSet.Tables["Product"].Rows)
@@ -71,14 +75,16 @@ namespace Shop.Core.Repositories
             return products;
         }
 
-        public async Task AddAsync(Product product)
+        public async Task AddAsync(Product product, CancellationToken cancellationToken = default)
         {
             var dataSet = new DataSet();
             using (var connection = new SqlConnection(_connectionString))
             {
-                var adapter = new SqlDataAdapter("SELECT * FROM Product", connection);
+                var query = "SELECT Id, Name, Description, Weight, Height, Width, Length FROM Product";
+                var adapter = new SqlDataAdapter(query, connection);
                 var builder = new SqlCommandBuilder(adapter);
-                await Task.Run(() => adapter.Fill(dataSet, "Product"));
+
+                await Task.Run(() => adapter.Fill(dataSet, "Product"), cancellationToken);
 
                 var newRow = dataSet.Tables["Product"].NewRow();
                 newRow["Id"] = product.Id;
@@ -90,19 +96,21 @@ namespace Shop.Core.Repositories
                 newRow["Length"] = product.Length;
                 dataSet.Tables["Product"].Rows.Add(newRow);
 
-                await Task.Run(() => adapter.Update(dataSet, "Product"));
+                await Task.Run(() => adapter.Update(dataSet, "Product"), cancellationToken);
             }
         }
 
-        public async Task UpdateAsync(Product product)
+        public async Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
         {
             var dataSet = new DataSet();
             using (var connection = new SqlConnection(_connectionString))
             {
-                var adapter = new SqlDataAdapter("SELECT * FROM Product WHERE Id = @Id", connection);
+                var query = "SELECT Id, Name, Description, Weight, Height, Width, Length FROM Product WHERE Id = @Id";
+                var adapter = new SqlDataAdapter(query, connection);
                 adapter.SelectCommand.Parameters.AddWithValue("@Id", product.Id);
                 var builder = new SqlCommandBuilder(adapter);
-                await Task.Run(() => adapter.Fill(dataSet, "Product"));
+
+                await Task.Run(() => adapter.Fill(dataSet, "Product"), cancellationToken);
 
                 if (dataSet.Tables["Product"].Rows.Count > 0)
                 {
@@ -114,31 +122,42 @@ namespace Shop.Core.Repositories
                     row["Width"] = product.Width;
                     row["Length"] = product.Length;
 
-                    await Task.Run(() => adapter.Update(dataSet, "Product"));
+                    await Task.Run(() => adapter.Update(dataSet, "Product"), cancellationToken);
                 }
             }
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            var dataSet = new DataSet();
             using (var connection = new SqlConnection(_connectionString))
             {
-                var deleteOrderProductCommand = new SqlCommand("DELETE FROM OrderProduct WHERE ProductId = @ProductId", connection);
-                deleteOrderProductCommand.Parameters.AddWithValue("@ProductId", id);
-                await deleteOrderProductCommand.ExecuteNonQueryAsync();
+                await connection.OpenAsync(cancellationToken);
 
-                var adapter = new SqlDataAdapter("SELECT * FROM Product WHERE Id = @Id", connection);
-                adapter.SelectCommand.Parameters.AddWithValue("@Id", id);
-                var builder = new SqlCommandBuilder(adapter);
-                await Task.Run(() => adapter.Fill(dataSet, "Product"));
-
-                if (dataSet.Tables["Product"].Rows.Count > 0)
+                using (var transaction = connection.BeginTransaction())
                 {
-                    var row = dataSet.Tables["Product"].Rows[0];
-                    row.Delete();
+                    try
+                    {
+                        // Eliminar las referencias en OrderProduct
+                        var deleteOrderProductCommand = new SqlCommand(
+                            "DELETE FROM OrderProduct WHERE ProductId = @ProductId",
+                            connection, transaction);
+                        deleteOrderProductCommand.Parameters.AddWithValue("@ProductId", id);
+                        await deleteOrderProductCommand.ExecuteNonQueryAsync(cancellationToken);
 
-                    await Task.Run(() => adapter.Update(dataSet, "Product"));
+                        // Eliminar el producto
+                        var deleteProductCommand = new SqlCommand(
+                            "DELETE FROM Product WHERE Id = @Id",
+                            connection, transaction);
+                        deleteProductCommand.Parameters.AddWithValue("@Id", id);
+                        await deleteProductCommand.ExecuteNonQueryAsync(cancellationToken);
+
+                        await transaction.CommitAsync(cancellationToken);
+                    }
+                    catch
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        throw;
+                    }
                 }
             }
         }
