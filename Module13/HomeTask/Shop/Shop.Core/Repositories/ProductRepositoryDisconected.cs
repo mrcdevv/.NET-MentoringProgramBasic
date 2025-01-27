@@ -137,14 +137,12 @@ namespace Shop.Core.Repositories
                 {
                     try
                     {
-                        // Eliminar las referencias en OrderProduct
                         var deleteOrderProductCommand = new SqlCommand(
                             "DELETE FROM OrderProduct WHERE ProductId = @ProductId",
                             connection, transaction);
                         deleteOrderProductCommand.Parameters.AddWithValue("@ProductId", id);
                         await deleteOrderProductCommand.ExecuteNonQueryAsync(cancellationToken);
 
-                        // Eliminar el producto
                         var deleteProductCommand = new SqlCommand(
                             "DELETE FROM Product WHERE Id = @Id",
                             connection, transaction);
