@@ -20,7 +20,7 @@ namespace Shop.Tests
         public void Setup()
         {
             _mockOrderRepository = new Mock<IOrderRepository>();
-            _orderService = new OrderService(_mockOrderRepository.Object); // Asume que tienes una clase OrderService que implementa IOrderService
+            _orderService = new OrderService(_mockOrderRepository.Object);
         }
 
         [Test]
@@ -28,56 +28,60 @@ namespace Shop.Tests
         {
             // Arrange
             var orderId = 1;
+            var token = CancellationToken.None;
             var expectedOrder = new Order { Id = orderId };
-            _mockOrderRepository.Setup(repo => repo.GetByIdAsync(orderId)).ReturnsAsync(expectedOrder);
+            _mockOrderRepository.Setup(repo => repo.GetByIdAsync(orderId, token)).ReturnsAsync(expectedOrder);
 
             // Act
             var result = await _orderService.GetByIdAsync(orderId);
 
             // Assert
-            Assert.AreEqual(expectedOrder, result);
+            Assert.That(result, Is.EqualTo(expectedOrder));
         }
 
         [Test]
         public async Task GetAllAsync_ShouldReturnAllOrders()
         {
             // Arrange
+            var token = CancellationToken.None;
             var expectedOrders = new List<Order> { new Order { Id = 1 }, new Order { Id = 2 } };
-            _mockOrderRepository.Setup(repo => repo.GetAllAsync()).ReturnsAsync(expectedOrders);
+            _mockOrderRepository.Setup(repo => repo.GetAllAsync(token)).ReturnsAsync(expectedOrders);
 
             // Act
             var result = await _orderService.GetAllAsync();
 
             // Assert
-            Assert.AreEqual(expectedOrders, result);
+            Assert.That(result, Is.EqualTo(expectedOrders));
         }
 
         [Test]
         public async Task AddAsync_ShouldAddOrder()
         {
             // Arrange
+            var token = CancellationToken.None;
             var order = new Order { Id = 1 };
-            _mockOrderRepository.Setup(repo => repo.AddAsync(order)).Returns(Task.CompletedTask);
+            _mockOrderRepository.Setup(repo => repo.AddAsync(order, token)).Returns(Task.CompletedTask);
 
             // Act
             await _orderService.AddAsync(order);
 
             // Assert
-            _mockOrderRepository.Verify(repo => repo.AddAsync(order), Times.Once);
+            _mockOrderRepository.Verify(repo => repo.AddAsync(order, token), Times.Once);
         }
 
         [Test]
         public async Task UpdateAsync_ShouldUpdateOrder()
         {
             // Arrange
+            var token = CancellationToken.None;
             var order = new Order { Id = 1 };
-            _mockOrderRepository.Setup(repo => repo.UpdateAsync(order)).Returns(Task.CompletedTask);
+            _mockOrderRepository.Setup(repo => repo.UpdateAsync(order, token)).Returns(Task.CompletedTask);
 
             // Act
             await _orderService.UpdateAsync(order);
 
             // Assert
-            _mockOrderRepository.Verify(repo => repo.UpdateAsync(order), Times.Once);
+            _mockOrderRepository.Verify(repo => repo.UpdateAsync(order, token), Times.Once);
         }
 
         [Test]
@@ -85,13 +89,14 @@ namespace Shop.Tests
         {
             // Arrange
             var orderId = 1;
-            _mockOrderRepository.Setup(repo => repo.DeleteAsync(orderId)).Returns(Task.CompletedTask);
+            var token = CancellationToken.None;
+            _mockOrderRepository.Setup(repo => repo.DeleteAsync(orderId, token)).Returns(Task.CompletedTask);
 
             // Act
             await _orderService.DeleteAsync(orderId);
 
             // Assert
-            _mockOrderRepository.Verify(repo => repo.DeleteAsync(orderId), Times.Once);
+            _mockOrderRepository.Verify(repo => repo.DeleteAsync(orderId, token), Times.Once);
         }
 
         [Test]
@@ -99,31 +104,33 @@ namespace Shop.Tests
         {
             // Arrange
             var orderIds = new int[] { 1, 2, 3 };
-            _mockOrderRepository.Setup(repo => repo.DeleteBulkAsync(orderIds)).Returns(Task.CompletedTask);
+            var token = CancellationToken.None;
+            _mockOrderRepository.Setup(repo => repo.DeleteBulkAsync(orderIds, token)).Returns(Task.CompletedTask);
 
             // Act
             await _orderService.DeleteBulkAsync(orderIds);
 
             // Assert
-            _mockOrderRepository.Verify(repo => repo.DeleteBulkAsync(orderIds), Times.Once);
+            _mockOrderRepository.Verify(repo => repo.DeleteBulkAsync(orderIds, token), Times.Once);
         }
 
         [Test]
         public async Task GetOrdersFilteredAsync_ShouldReturnFilteredOrders()
         {
             // Arrange
+            var token = CancellationToken.None;
             var year = 2023;
             var month = 10;
             var status = OrderStatus.InProgress;
             var productId = 1;
             var expectedOrders = new List<Order> { new Order { Id = 1 }, new Order { Id = 2 } };
-            _mockOrderRepository.Setup(repo => repo.GetOrdersFilteredAsync(year, month, status, productId)).ReturnsAsync(expectedOrders);
+            _mockOrderRepository.Setup(repo => repo.GetOrdersFilteredAsync(year, month, status, productId, token)).ReturnsAsync(expectedOrders);
 
             // Act
             var result = await _orderService.GetOrdersFilteredAsync(year, month, status, productId);
 
             // Assert
-            Assert.AreEqual(expectedOrders, result);
+            Assert.That(result, Is.EqualTo(expectedOrders));
         }
     }
 }
